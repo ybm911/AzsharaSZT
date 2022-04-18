@@ -1,7 +1,7 @@
 # AzsharaSZT
 深圳图书馆网络信息空间和创客空间抢位置
 
-![创客空间](https://cdn.jsdelivr.net/gh/ybm911/blog_picture/img/image-20220418235632281.png)
+![image-20220418235632281](https://cdn.jsdelivr.net/gh/ybm911/blog_picture/img/image-20220418235632281.png)
 
 
 > 网站预警：
