@@ -1,0 +1,12 @@
+---
+# 读者证号（必填）
+number : ""
+
+# 读者证登陆密码（必填）
+password : ""
+
+# JSESSIONID
+JSESSIONID : ""
+
+# accessToken
+accessToken : ""

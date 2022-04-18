@@ -1,9 +1,22 @@
+import sys
 import requests
 from urllib3 import encode_multipart_formdata
 import logging
 import json
 import time
+import yaml
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+
+
+# 时间限制
+def timeLimit():
+    hour = int(time.strftime('%H'))
+    minute = int(time.strftime('%M'))
+    if hour < 9 or hour >= 21:
+        if hour == 21 and minute < 15:
+            return 1
+        sys.exit('运行时间段出错')
+    return 1
 
 
 # 登陆
@@ -23,7 +36,7 @@ def getAccessToken(UserNumber, UserPassword):
     session = requests.session()
     session.get(url=accessTokenUrl, headers=AccessTokenHeaders)
     JSESSIONID = session.cookies.get_dict()['JSESSIONID']
-    print(JSESSIONID)
+    # print(JSESSIONID)
 
     # 密码登陆
     PasswordLoginPayload = {
@@ -46,7 +59,7 @@ def getAccessToken(UserNumber, UserPassword):
         'X-Requested-With': 'XMLHttpRequest'
     }
     response = requests.get(url=PasswordLoginUrl, headers=PasswordLoginHeaders)
-    print(response.text)
+    # print(response.text)
 
     # 获取 accessToken
     accessTokenUrl = "https://www.szlib.org.cn/m/mylibrary/member.jsp"
@@ -72,6 +85,7 @@ def whereIsmySeat(accessToken):
     url = "https://yun.szlib.org.cn/electroomapi/elecroom/ermonitor"
     params = {
         'servaddr':(None, 'STRead-4E,STRead-4FN'),
+        # 只与 DISTANCE 有关
         'authkey':(None, 'f4aa3a4b002dee395a6b9a2b35706b01'),
         'lognum':(None, '6'),
         'timesup':(None, '10')
@@ -114,13 +128,13 @@ def whereIsmySeat(accessToken):
             S1 = S1 + 1
     logging.info('创客空间')
     logging.info('正在使用座位：' + str(U1))
-    logging.info('无法使用座位：' + str(S1))
+    # logging.info('无法使用座位：' + str(S1))
     logging.info('可使用座位：' + str(C1))
-    print(C1list)
+    print('创客空间剩余座位：' + str(C1list))
     if C1 > 0:
         # round 四舍五入
         R1Select = str(C1list[round(len(C1list) / 2)]).rjust(3, '0')
-        print(R1Select)
+        # print(R1Select)
         return 'STRead-4FN', R1Select
 
     # 网络信息空间
@@ -141,25 +155,24 @@ def whereIsmySeat(accessToken):
             S0 = S0 + 1
     logging.info('网络信息空间')
     logging.info('正在使用座位：' + str(U0))
-    logging.info('无法使用座位：' + str(S0))
+    # logging.info('无法使用座位：' + str(S0))
     logging.info('可使用座位：' + str(C0))
-    print(C0list)
+    print('网络信息空间剩余座位：' + str(C0list))
     if C0 > 0:
         # round 四舍五入
         R0Select = str(C0list[round(len(C0list) / 2)]).rjust(3, '0')
-        print(R0Select)
+        # print(R0Select)
         return 'STRead-4E', R0Select
 
 
 # 申请座位
 def applySeat(servaddr, seatid, access_token):
     applySeatUrl = 'https://yun.szlib.org.cn/electroom4mobileapi/elecroom4mobile/seatdistribute'
-    # ?servaddr=STRead-4FN&seatid=019&access_token=b602873c-83eb-4810-a3ae-83d92b6ec969
     headers = {
         'Host': 'yun.szlib.org.cn',
         'Accept': 'application/json, text/plain, */*',
         'Connection': 'keep-alive',
-        'Cookie': 'usermsg=%7B%22cardno%22%3A%220440005181480%22%2C%22readerid%22%3A%224925352%22%2C%22gender%22%3A%22%E7%94%B7%22%2C%22name%22%3A%22%E9%AB%98%E5%AE%87%E6%88%88%22%2C%22address%22%3A%22%22%2C%22phone%22%3A%2218979486699%22%2C%22password%22%3A%2203f724b6323bdb83fa88fe6ce6c047b0%22%2C%22webpsd%22%3A%22e410037f8406406e82135ae290e3b1bb%22%2C%22status%22%3A%22%E6%9C%89%E6%95%88%22%2C%22birth%22%3A20010109%2C%22cardtype%22%3A%22%E9%B9%8F%E5%9F%8E%E5%8A%B1%E8%AF%BB%E8%AF%81%22%2C%22entertimes%22%3A0%2C%22totaltimes%22%3A0%7D; DISTANCE=96.4; accessToken_szlib=b602873c-83eb-4810-a3ae-83d92b6ec969',
+        'Cookie': 'accessToken_szlib=' + access_token,
         'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_8_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.20(0x18001429) NetType/WIFI Language/zh_CN',
         'Accept-Language': 'zh-cn',
         'Referer': 'https://yun.szlib.org.cn/electroom/',
@@ -175,9 +188,28 @@ def applySeat(servaddr, seatid, access_token):
 
 
 if __name__ == '__main__':
-    UserNumber = '0440005181480'
-    UserPassword = 'k7WpNCSqENTej7T'
-    accessToken, JSESSIONID = getAccessToken(UserNumber, UserPassword)
-    servaddr, seatid = whereIsmySeat(accessToken)
-    result = applySeat(servaddr, seatid, accessToken)
-    print(result)
+    with open('config.yaml', 'r') as config:
+        information = yaml.load(config.read(), Loader=yaml.FullLoader)
+        UserNumber = information['number']
+        UserPassword = information['password']
+    # timeLimit()
+    try:
+        accessToken, JSESSIONID = getAccessToken(UserNumber, UserPassword)
+        print('登陆成功')
+    except:
+        print('登陆出错')
+        sys.exit()
+    while True:
+        try:
+            servaddr, seatid = whereIsmySeat(accessToken)
+            print('预挑选位置：' + seatid + '；房间是：' + ('创客空间' if servaddr == 'STRead-4FN' else '网络信息空间'))
+            break
+        except:
+            print('位置挑选出错')
+            sys.exit()
+    try:
+        result = json.loads(applySeat(servaddr, seatid, accessToken))
+        print('选择成功位置为：' + result['seat']['id'])
+    except:
+        print('位置预约出错')
+        sys.exit()
