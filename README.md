@@ -3,6 +3,7 @@
 
 ![创客空间](https://cdn.jsdelivr.net/gh/ybm911/blog_picture/img/image-20220418235632281.png)
 
+![网络信息空间二维码](https://cdn.jsdelivr.net/gh/ybm911/blog_picture/img/IMG_0025.png)
 
 > 网站预警：
 >
